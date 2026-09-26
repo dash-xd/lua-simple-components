@@ -6,6 +6,12 @@ local function expectError(fn, message)
 end
 
 local Health = Component()
+assert(Health.Components == Components, "component instances must expose the shared Components registry")
+assert(Health.Component == Component, "component instances must expose the Component constructor")
+
+local Nested = Health.Component()
+assert(Nested.Components == Components, "components created from an instance must share the registry")
+
 Health.health = 100
 
 function Health:damage(amount)
