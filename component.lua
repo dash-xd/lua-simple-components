@@ -1,32 +1,12 @@
 -- Components.lua
 -------------------------------------------------------------------------------------------
--- COMPONENTS
--------------------------------------------------------------------------------------------
-local Components
-local Component
-
-local ComponentMeta = {
-	__index = function(_, key)
-		if key == "Components" then
-			return Components
-	end
-	if key == "Component" then
-			return Component
-	end
-end,
-}
-
-Component = function()
-	return setmetatable({}, ComponentMeta)
-end
-
-local function isComponent(value)
-	return getmetatable(value) == ComponentMeta
-end
-
--------------------------------------------------------------------------------------------
 -- COMPOSITION
 -------------------------------------------------------------------------------------------
+local GlobalComponents
+local Component
+
+local RegistryMethods = {}
+
 local function searchParents(key, parents)
 	for i = 1, #parents do
 		local found = parents[i][key]
@@ -44,16 +24,13 @@ local function RegisterParents(parents)
 	}
 end
 
-local registered = {}
-local RegistryMethods = {}
-
 function RegistryMethods:Apply(args)
 	local target = assert(args.target, "Apply requires a target")
 	local tags = args.tags or {}
 	local parents = args.parents or {}
 
 	for _, tag in ipairs(tags) do
-		local component = registered[tag]
+		local component = self[tag]
 		if component then
 			table.insert(parents, component)
 		else
@@ -65,22 +42,26 @@ function RegistryMethods:Apply(args)
 	return target
 end
 
-Components = setmetatable({}, {
-	__index = function(_, key)
-		local method = RegistryMethods[key]
-		if method then
-			return method
-		end
-		return registered[key]
-	end,
+local function newRegistry()
+	local registry = {}
 
-	__newindex = function(_, key, value)
-		assert(
-			isComponent(value),
-			"registered components must be created with Component()"
-		)
-		registered[key] = value
-	end,
-})
+	return setmetatable(registry, {
+		__index = function(_, key)
+			if key == "Components" then
+				return GlobalComponents
+			end
+			if key == "Component" then
+				return Component
+			end
+			return RegistryMethods[key]
+		end,
+	})
+end
 
-return Components, Component
+Component = function()
+	return newRegistry()
+end
+
+GlobalComponents = newRegistry()
+
+return GlobalComponents, Component
