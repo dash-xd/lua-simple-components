@@ -23,37 +23,30 @@ end
 -------------------------------------------------------------------------------------------
 -- COMPONENT SYSTEM WITH CHAINED METATABLES --
 -------------------------------------------------------------------------------------------
-local Components = {}
-function Components:Apply(entity, tags, parents)
-	parents = parents or {}
-	for _, tag in ipairs(tags) do
-		local component = Components[tag]  -- Fetch the component based on the tag
-		if component then
-			table.insert(parents, component) -- Add to list for multi-parent search
-		else
-			warn("Component for tag '" .. tag .. "' not found in Components.")
-		end
-	end
-	setmetatable(entity, RegisterParents(parents))
-	return entity
-end
-
 local function Component()
-	local Components = {}
-	function Components:Apply(entity, tags, parents)
-		parents = parents or {}
+	local components = {}
+
+	function components:Apply(args)
+		local entity = assert(args.entity, "Apply requires an entity")
+		local tags = args.tags or {}
+		local parents = args.parents or {}
+
 		for _, tag in ipairs(tags) do
-			local component = Components[tag]  -- Fetch the component based on the tag
+			local component = self[tag]
 			if component then
-				table.insert(parents, component) -- Add to list for multi-parent search
+				table.insert(parents, component)
 			else
 				warn("Component for tag '" .. tag .. "' not found in Components.")
 			end
 		end
+
 		setmetatable(entity, RegisterParents(parents))
 		return entity
 	end
-	return Components
+
+	return components
 end
+
+local Components = Component()
 
 return Components, Component
